@@ -1,0 +1,252 @@
+\documentclass[11pt]{llncs}
+\usepackage[scale=.78]{geometry}
+
+\usepackage[backref]{hyperref}
+\usepackage{amsmath,amsfonts,amssymb}
+
+\newcommand\ignore[1]{}
+
+\begin{document}
+
+\title{Boolean/Arithmetic Conversions  for any Order}
+
+\author{
+Jean-S\'ebastien Coron}
+
+\maketitle
+
+\begin{abstract}
+At CHES 2001 Goubin presented a nice method for converting from boolean
+masking to arithmetic masking and conversely. However the method is
+only secure against first-order attacks. In the paper we provide a
+generalization to any order.
+\end{abstract}
+
+\section{Introduction}
+
+Let $x$ be a sensitive variable. 
+
+Boolean masking: $x=x' \oplus r$.
+
+Arithmetic masking: $x=A+ r \bmod 2^k$, where $k$ is the register
+size.
+
+
+\section{From Boolean to Arithmetic Masking}
+
+It is shown in \cite{goubin} that the following function is affine
+with respect to the Boolean operation:
+$$ \Psi_{x'}(r) = (x' \oplus r) -r \mod 2^k$$
+
+\begin{theorem}[Goubin \cite{goubin}]
+The function $$ \Psi_{x'}(r) = (x' \oplus r) -r \mod 2^k$$ is affine
+over $GF(2)$.
+\end{theorem}
+
+\begin{proof}
+The proof in \cite{goubin} is based on the following equality.
+$$ \Psi_{x'}(r)=x' \oplus \bigoplus\limits_{i=1}^{k-1} \left( \left(
+\bigwedge\limits_{j=1}^{i-1} 2^j \bar{x'} \right) \wedge (2^i x') \wedge
+(2^i r) \right)$$
+This equality is proved by induction in \cite{goubin}; the affine
+property of $\Psi_{x'}(r)$ follows immediatly.  However, it is
+difficult to understand intuitively why such equality holds. In this
+section we provide a hopefully more enlightening  proof of the affine
+property of $\Psi_{x'}(r)$. To do.
+\qed
+ \end{proof}
+
+The conversion from boolean to arithmetic masking is then
+straightforward. Given $x',r$ such that 
+$x=x' \oplus r$
+we must compute $A$ such that $x=A+r$, which gives:
+$$ A=(x' \oplus r)-r=\Psi_{x'}(r)=\Psi_{x'}(r \oplus r_2) \oplus
+\left(\Psi_{x'}(r_2) \oplus \Psi_{x'}(0) \right)$$
+for a random $r_2$. The technique is clearly secure against
+first-order attacks.
+
+
+\subsection{Generalization to any Order}
+
+\label{s:firstgen}
+
+In this section we describe a first generalization to any order based on the
+previous Goubin 
+method; however it does not seem to work. 
+
+We want to convert from:
+$$ x=x_1 \oplus x_2 \oplus \ldots \oplus x_n$$
+to
+$$x =A_1 + A_2 + \ldots + A_n$$
+without any $(n-1)$-th order leakage.
+
+We proceed iteratively by computing:
+\begin{eqnarray*}
+x& =& x_1 \oplus x_2 \oplus \ldots \oplus x_n \\
+x & = & A_1 + (x_2 \oplus \ldots \oplus x_n) \\
+x & = & A_1 + A_2 + (x_3 \oplus \ldots \oplus x_n) \\
+& \vdots & \\
+x & = & A_1 + \ldots + A_{n-2} + (x_{n-1} \oplus x_n) \\
+x & = & A_1 + \ldots + A_{n-2}+ A_{n-1} + A_n
+\end{eqnarray*}
+
+In the following we focus on the first conversion; the remaining
+conversions proceed similarly.
+\begin{eqnarray*}
+x& =& x_1 \oplus x_2 \oplus \ldots \oplus x_n \\
+x & = & A_1 + (x_2 \oplus \ldots \oplus x_n) 
+\end{eqnarray*}
+which gives:
+\begin{eqnarray*}
+A_1 & = & x_1 \oplus (x_2 \oplus \ldots \oplus x_n) - (x_2 \oplus \ldots
+\oplus x_n) \\
+A_1 & = & \Psi_{x_1}(x_2 \oplus \ldots \oplus x_n) \\
+A_1 & = & \Psi_{x_1}(x_2) \oplus \Psi_{x_1}(x_3) \ldots \oplus
+\Psi_{x_1}(x_n) \oplus u
+\end{eqnarray*}
+where $u=\Psi_{x_1}(0)=x_1$ if $n$ is odd, and $u=0$ otherwise. This
+is thanks to the affine property of $\Psi_{x_1}(r)$.
+
+Now one could compute the $\Psi_{x_1}(x_i)$ for $2 \leq i \leq n$
+separately and eventually xor them, but the xor operation could leak
+information on $x$ (even though the result $A_1$ does not leak information
+on $x$). One could try to randomize the process by xoring the
+intermediate variables by a sequence of random $r_i$'s, but that does
+not seem to work. 
+
+The complexity of the first step is ${\cal O}(n)$; therefore the total
+complexity is ${\cal O}(n^2)$. 
+
+\section{From Boolean to Arithmetic Masking for any Order}
+
+\label{s:boolarithany}
+
+In this section we describe a conversion method from Boolean to
+Arithmetic masking that seems to work for any order. However it is
+less efficient, with complexity ${\cal O}(n^3)$.
+
+We assume that there is an index $j$ such that the senstitive variable
+$x$ is shared as follows.
+$$ x=A_1 + A_2 + \ldots+ A_j + (x_{j+1} \oplus \ldots \oplus x_n)$$
+Initially we have $j=0$ (Boolean masking), and eventually $j=n$
+(arithmetic masking).
+
+We show how to go from step $j$ to step $j+1$, without any small order
+leakage. The technique consists in writing:
+
+\begin{eqnarray*}
+x & = & A_1 + \ldots +A_j + (x_{j+1} \oplus \ldots \oplus x_n)\\
+x & = & A_1 + \ldots +A_j + (-r)+ \left( r + (x_{j+1} \oplus \ldots
+\oplus x_n) \right) \\
+x & = & A_1 + \ldots + A_{j} + (-r)+  \left( (r_{j+1} \oplus \ldots \oplus
+r_n) + (x_{j+1} \oplus \ldots
+\oplus x_n)   \right) \\
+x & = & A_1 + \ldots + A_{j} + A_{j+1}+  \left( x'_{j+2} \oplus \ldots \oplus
+x'_n \right)
+\end{eqnarray*}
+where $r_{j+1} \oplus \ldots \oplus r_n=r$, and $A_{j+1}=(-r)$.
+
+Therefore one must perform the addition:
+$$(r_{j+1} \oplus \ldots \oplus
+r_n) + (x_{j+1} \oplus \ldots
+\oplus x_n)=  x'_{j+2} \oplus \ldots \oplus
+x'_n $$
+without any low-order leakage. This corresponds to a secure evaluation
+of the
+circuit for addition, with shares of size $n-j= {\cal O}(n)$. For
+$k$-bit registers, the addition circuit has size ${\cal
+  O}(k)$. Therefore using the ISW technique  \cite{isw} this can be done in time ${\cal O}(k \cdot
+n^2)$. Therefore the full complexity is ${\cal O}(k \cdot n^3)$.
+
+Note that the technique does not use Goubin's conversion
+method. Goubin's conversion method could be used in the last step, to
+convert $x_{n-1} \oplus x_n$ into $A_{n_1}+ A_n$, but this would not
+modify the total complexity. 
+
+\section{From Arithmetic to Boolean Masking}
+
+Goubin also described in \cite{goubin} a technique for converting from
+arithmetic to boolean masking, against first-order leakage. However it
+is more complex than from boolean to arithmetic masking. Its
+complexity is ${\cal O}(k)$ for registers of $k$ bits.
+
+\section{From Arithmetic to Boolean Masking for any Order}
+
+We use the same technique as in \ref{s:boolarithany}. We write:
+
+\begin{eqnarray*}
+x & = & A_1 + \ldots +A_{j-1}+ A_j + (x_{j+1} \oplus \ldots \oplus x_n)\\
+x & = & A_1 + \ldots +A_{j-1} + \left( A_j + (x_{j+1} \oplus \ldots
+\oplus x_n) \right) \\
+x & = & A_1 + \ldots +A_{j-1} + \left( (r_{j} \oplus \ldots \oplus
+r_n) + (x_{j+1} \oplus \ldots
+\oplus x_n) \right) \\
+x & = & A_1 + \ldots + A_{j-1} +  \left( x'_{j} \oplus \ldots \oplus
+x'_n \right)
+\end{eqnarray*}
+where $r_{j} \oplus \ldots \oplus r_n=A_j$. The complexity for one
+step is ${\cal O}(k \cdot n^2)$ and the full complexity is again
+${\cal O}(k \cdot n^3)$. 
+
+\section{From Boolean to Arithmetic Masking for any Order}
+
+We show a variant of the technique from Section \ref{s:firstgen} that
+could work.
+
+We use a procedure ${\sf PartialConvert}$ which is defined as follows:
+$${\sf PartialConvert}(x_1,\ldots,x_d)=(y_1,\ldots,y_{d-1})$$
+where
+$$ (y_1 \oplus \ldots \oplus y_{d-1}) + (x_2 \oplus \ldots \oplus
+x_d)=x_1 \oplus \ldots \oplus x_d$$
+In other words, {\sf PartialConvert} provides a $(d-1)$-sharing of
+$A_1$, where 
+$$A_1 +  (x_2 \oplus \ldots \oplus
+x_d)=x_1 \oplus \ldots \oplus x_d$$
+
+
+From Goubin's convertion method it is easy to obtain such procedure
+${\sf PartialConvert}$:
+\begin{eqnarray*}
+A_1 & = & x_1 \oplus (x_2 \oplus \ldots \oplus x_d) - (x_2 \oplus \ldots
+\oplus x_d) \\
+A_1 & = & \Psi_{x_1}(x_2 \oplus \ldots \oplus x_d) \\
+A_1 & = & \Psi_{x_1}(x_2) \oplus \Psi_{x_1}(x_3) \ldots \oplus
+(\Psi_{x_1}(x_d) \oplus u) \\
+A_1 & = & y_1 \oplus \ldots \oplus y_{d-1}
+\end{eqnarray*}
+where $u=\Psi_{x_1}(0)=x_1$ if $n$ is odd, and $u=0$ otherwise. This
+is thanks to the affine property of $\Psi_{x_1}(r)$. We take
+$y_i=\psi_{x_1}(x_{i+1})$ for $2 \leq i \leq d$. It is probably a good
+idea to further re-randomize the $y_i$'s. The complexity of ${\sf
+  PartialConvert}$ is ${\cal O}(d)$.
+
+Using {\sf PartialConvert} with input a $d$-th order Boolean
+sharing, we obtain as output a arithmetic sum of $2$ Boolean sharing
+of order $d-1$. We can therefore apply the {\sf PartialConvert}
+procedure recursively on both parts.
+
+The total complexity to convert a $n$-th order Boolean masking into
+arithmetic masking is then
+$\tilde{ \cal O}(2^n)$. This is worse than the ${\cal O}(n^3)$
+complexity from
+Section \ref{s:boolarithany} but this might be more advantageous for
+small $n$, since we don't have to perform bit manipulations. More precisely
+taking into account the register size, the complexity is $\tilde{ \cal
+  O}(2^n)$ instead of ${\cal O}(k \cdot n^3)$. So this method is more
+advantageous for small $n$ and large register size $k$; this may
+correspond to what is used in practice.
+
+
+\begin{thebibliography}{30}
+\bibitem{goubin}
+L. Goubin, {\sl A Sound Method for Switching between Boolean and
+  Arithmetic Masking}. Proceedings of CHES 2001.
+
+\bibitem{isw}
+Y. Ishai, A. Sahai and D. Wagner, 
+{Private Circuits: Securing Hardware against Probing Attacks},
+Proceedings of Crypto 2003.
+
+\end{thebibliography}
+
+\end{document}
