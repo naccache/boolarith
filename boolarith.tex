@@ -13,12 +13,14 @@
 \author{
 Jean-S\'ebastien Coron}
 
+\institute{~}
+
 \maketitle
 
 \begin{abstract}
 At CHES 2001 Goubin presented a nice method for converting from boolean
 masking to arithmetic masking and conversely. However the method is
-only secure against first-order attacks. In the paper we provide a
+only secure against first-order attacks. In this paper we provide a
 generalization to any order.
 \end{abstract}
 
@@ -128,7 +130,7 @@ less efficient, with complexity ${\cal O}(n^3)$.
 We assume that there is an index $j$ such that the senstitive variable
 $x$ is shared as follows.
 $$ x=A_1 + A_2 + \ldots+ A_j + (x_{j+1} \oplus \ldots \oplus x_n)$$
-Initially we have $j=0$ (Boolean masking), and eventually $j=n$
+Initially we have $j=0$ (Boolean masking), and eventually $j=n-1$
 (arithmetic masking).
 
 We show how to go from step $j$ to step $j+1$, without any small order
@@ -160,19 +162,37 @@ n^2)$. Therefore the full complexity is ${\cal O}(k \cdot n^3)$.
 
 Note that the technique does not use Goubin's conversion
 method. Goubin's conversion method could be used in the last step, to
-convert $x_{n-1} \oplus x_n$ into $A_{n_1}+ A_n$, but this would not
+convert $x_{n-1} \oplus x_n$ into $A_{n-1}+ A_n$, but this would not
 modify the total complexity. 
 
 \section{From Arithmetic to Boolean Masking}
 
 Goubin also described in \cite{goubin} a technique for converting from
-arithmetic to boolean masking, against first-order leakage. However it
+arithmetic to boolean masking, secure against first-order leakage. However it
 is more complex than from boolean to arithmetic masking. Its
 complexity is ${\cal O}(k)$ for registers of $k$ bits.
+It is based on the following theorem.
+
+\begin{theorem}[Goubin \cite{goubin}]
+\label{t:goubin2}
+If we denote $x'=(A+r) \oplus r$, we also have $x'=A \oplus u_{k-1}$,
+where $u_{k-1}$ is obtained from the following recursion formula:
+$$\left\{
+\begin{array}{l}
+u_0=0 \\
+\forall k \geq 0, u_{k+1}=2 [u_k \wedge (A \oplus r) \oplus (A \wedge
+  r) ]
+\end{array}
+\right.
+$$
+\end{theorem}
+
 
 \section{From Arithmetic to Boolean Masking for any Order}
 
-We use the same technique as in \ref{s:boolarithany}. We write:
+\label{s:arithboolany}
+
+We use the same technique as in Section \ref{s:boolarithany}. We write:
 
 \begin{eqnarray*}
 x & = & A_1 + \ldots +A_{j-1}+ A_j + (x_{j+1} \oplus \ldots \oplus x_n)\\
@@ -198,13 +218,13 @@ $${\sf PartialConvert}(x_1,\ldots,x_d)=(y_1,\ldots,y_{d-1})$$
 where
 $$ (y_1 \oplus \ldots \oplus y_{d-1}) + (x_2 \oplus \ldots \oplus
 x_d)=x_1 \oplus \ldots \oplus x_d$$
-In other words, {\sf PartialConvert} provides a $(d-1)$-sharing of
+In other words, {\sf PartialConvert} provides a $(d-1)$-th boolean sharing of
 $A_1$, where 
 $$A_1 +  (x_2 \oplus \ldots \oplus
 x_d)=x_1 \oplus \ldots \oplus x_d$$
 
 
-From Goubin's convertion method it is easy to obtain such procedure
+Using Goubin's convertion method it is easy to obtain such procedure
 ${\sf PartialConvert}$:
 \begin{eqnarray*}
 A_1 & = & x_1 \oplus (x_2 \oplus \ldots \oplus x_d) - (x_2 \oplus \ldots
@@ -232,9 +252,52 @@ complexity from
 Section \ref{s:boolarithany} but this might be more advantageous for
 small $n$, since we don't have to perform bit manipulations. More precisely
 taking into account the register size, the complexity is $\tilde{ \cal
-  O}(2^n)$ instead of ${\cal O}(k \cdot n^3)$. So this method is more
+  O}(2^n)$ instead of ${\cal O}(k \cdot n^3)$ in Section
+\ref{s:boolarithany}.  So this method is more
 advantageous for small $n$ and large register size $k$; this may
 correspond to what is used in practice.
+
+Finally we note that we could use a similar technique for the
+convertion from arithmetic to Boolean masking. The complexity would
+be  $\tilde{ \cal
+  O}(2^n)+ {\cal O}(k \cdot n^2)$ instead of ${\cal O}(k \cdot n^3)$ in Section
+\ref{s:arithboolany}
+
+\section{Yet Another Variant}
+
+We note that in both Sections \ref{s:boolarithany} and
+\ref{s:arithboolany} we must compute:
+$$ r+ (x_{j+1} \oplus  \cdots \oplus x_n)=x'_{j} \oplus \cdots
+\oplus x'_n$$
+Now instead of using a circuit of size ${\cal O}(k \cdot n^2)$ for
+performing the arithmetic addition, we 
+ can actually use Goubin's second method for conversion from
+ arithmetic too boolean masking.
+
+Namely denoting $x'=x'_{j} \oplus \cdots
+\oplus x'_n$, we have:
+$$x' \oplus r=x'_{j} \oplus \cdots
+\oplus (x'_n \oplus r)=(A+r) \oplus r$$
+where 
+$$A=x_{j+1} \oplus  \cdots \oplus x_n$$
+Therefore we use the compute the  recurrence from Theorem
+\ref{t:goubin2}, with $x'=(A+r) \oplus r=A \oplus u_{k-1}$, where:
+$$\left\{
+\begin{array}{l}
+u_0=0 \\
+\forall k \geq 0, u_{k+1}=2 [u_k \wedge (A \oplus r) \oplus (A \wedge
+  r) ]
+\end{array}
+\right.
+$$
+where we compute $u_k$ and $A$ with $n$ boolean shares. Therefore the
+result $x' =A \oplus u_{k-1}$ has also $n$ boolean shares (if there
+are too many boolean shares, we can simply reduce the number of
+shares). 
+
+The complexity of this step is still ${\cal O}(k \cdot n^2)$
+operations, and the total complexity is still ${\cal O}(k \cdot
+n^3)$. However, this latter method might be easier to implement.
 
 
 \begin{thebibliography}{30}
